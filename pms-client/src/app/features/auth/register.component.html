@@ -1,0 +1,100 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-slate-900 px-3 py-5">
+  <div class="card shadow-lg border-0 rounded-4 overflow-hidden" style="max-width: 520px; width: 100%;">
+    <!-- Header -->
+    <div class="bg-primary text-white p-4 text-center">
+      <h3 class="fw-bold mb-1">Create Account</h3>
+      <p class="text-white-50 small mb-0">Join our property management network</p>
+    </div>
+
+    <div class="card-body p-4 p-md-5">
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <!-- Name Row -->
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold small text-muted">First Name</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="firstName" 
+              placeholder="John"
+              [class.is-invalid]="isFieldInvalid('firstName')">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold small text-muted">Last Name</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="lastName" 
+              placeholder="Doe"
+              [class.is-invalid]="isFieldInvalid('lastName')">
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-muted">Email Address</label>
+          <input 
+            type="email" 
+            class="form-control" 
+            formControlName="email" 
+            placeholder="john.doe@example.com"
+            [class.is-invalid]="isFieldInvalid('email')">
+        </div>
+
+        <!-- Phone -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-muted">Phone Number (Ethiopia)</label>
+          <input 
+            type="tel" 
+            class="form-control" 
+            formControlName="phoneNumber" 
+            placeholder="+251 91 123 4567 or 0911234567"
+            [class.is-invalid]="isFieldInvalid('phoneNumber')">
+          <div *ngIf="isFieldInvalid('phoneNumber')" class="invalid-feedback d-block small">
+            Please enter a valid Ethiopian phone number (e.g. 0911234567 or +251911234567).
+          </div>
+        </div>
+
+        <!-- Role Selector -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-muted">Register As</label>
+          <select class="form-select" formControlName="role">
+            <option value="Admin">Admin / Property Owner</option>
+            <option value="PropertyManager">Property Manager</option>
+            <option value="Tenant">Tenant (Renters)</option>
+          </select>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold small text-muted">Password</label>
+          <input 
+            type="password" 
+            class="form-control" 
+            formControlName="password" 
+            placeholder="At least 6 characters"
+            [class.is-invalid]="isFieldInvalid('password')">
+          <div *ngIf="isFieldInvalid('password')" class="invalid-feedback d-block small">
+            Password must be at least 6 characters.
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="btn btn-primary w-100 py-2 shadow-sm d-flex align-items-center justify-content-center gap-2"
+          [disabled]="registerForm.invalid || authStore.isLoading()">
+          <span *ngIf="authStore.isLoading()" class="spinner-border spinner-border-sm"></span>
+          <span>Create Account</span>
+        </button>
+      </form>
+
+      <div class="text-center mt-4 pt-2 small text-muted">
+        Already have an account? 
+        <a routerLink="/login" class="text-primary fw-semibold text-decoration-none">Sign In</a>
+      </div>
+    </div>
+  </div>
+
+  <app-toast-container></app-toast-container>
+</div>

@@ -1,0 +1,21 @@
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+  <div 
+    *ngFor="let toast of notificationService.toasts()" 
+    class="toast show shadow-lg border-0 mb-2" 
+    role="alert" 
+    aria-live="assertive" 
+    aria-atomic="true">
+    <div class="toast-header" [ngClass]="getHeaderClass(toast.type)">
+      <i class="bi me-2" [ngClass]="getIconClass(toast.type)"></i>
+      <strong class="me-auto text-white">{{ toast.title || 'Notification' }}</strong>
+      <button 
+        type="button" 
+        class="btn-close btn-close-white ms-2 mb-1" 
+        (click)="notificationService.remove(toast.id)" 
+        aria-label="Close"></button>
+    </div>
+    <div class="toast-body bg-white text-dark">
+      {{ toast.message }}
+    </div>
+  </div>
+</div>

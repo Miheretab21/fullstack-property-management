@@ -1,0 +1,108 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-slate-900 px-3 py-5">
+  <div class="card shadow-lg border-0 rounded-4 overflow-hidden" style="max-width: 440px; width: 100%;">
+    <!-- Header -->
+    <div class="bg-primary text-white p-4 text-center">
+      <div class="d-inline-flex align-items-center justify-content-center bg-white text-primary rounded-circle mb-3 shadow" style="width: 56px; height: 56px;">
+        <i class="bi bi-building fs-3"></i>
+      </div>
+      <h3 class="fw-bold mb-1">Welcome Back</h3>
+      <p class="text-white-50 small mb-0">Sign in to your Property Management account</p>
+    </div>
+
+    <!-- Form Body -->
+    <div class="card-body p-4 p-md-5">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <!-- Email -->
+        <div class="mb-3">
+          <label for="email" class="form-label fw-semibold small text-muted">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0 text-muted">
+              <i class="bi bi-envelope"></i>
+            </span>
+            <input 
+              id="email" 
+              type="email" 
+              class="form-control border-start-0" 
+              formControlName="email" 
+              placeholder="admin@propertymgt.com"
+              [class.is-invalid]="isFieldInvalid('email')">
+          </div>
+          <div *ngIf="isFieldInvalid('email')" class="invalid-feedback d-block small">
+            Please enter a valid email address.
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4">
+          <label for="password" class="form-label fw-semibold small text-muted">Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0 text-muted">
+              <i class="bi bi-lock"></i>
+            </span>
+            <input 
+              id="password" 
+              [type]="showPassword ? 'text' : 'password'" 
+              class="form-control border-start-0 border-end-0" 
+              formControlName="password" 
+              placeholder="••••••••"
+              [class.is-invalid]="isFieldInvalid('password')">
+            <button 
+              type="button" 
+              class="input-group-text bg-light border-start-0 text-muted" 
+              (click)="showPassword = !showPassword">
+              <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+            </button>
+          </div>
+          <div *ngIf="isFieldInvalid('password')" class="invalid-feedback d-block small">
+            Password is required (min 6 characters).
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+          [disabled]="loginForm.invalid || authStore.isLoading()">
+          <span *ngIf="authStore.isLoading()" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <span *ngIf="!authStore.isLoading()">Sign In</span>
+          <span *ngIf="authStore.isLoading()">Signing In...</span>
+        </button>
+      </form>
+
+      <!-- Demo Quick Fill Buttons -->
+      <div class="mt-4 pt-3 border-top">
+        <div class="small text-muted fw-bold mb-2 text-center text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+          Quick Demo Accounts
+        </div>
+        <div class="d-flex gap-2 justify-content-center">
+          <button 
+            type="button" 
+            class="btn btn-sm btn-outline-secondary flex-grow-1" 
+            (click)="fillDemo('admin@propertymgt.com', 'Admin@123456')">
+            Admin
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-sm btn-outline-secondary flex-grow-1" 
+            (click)="fillDemo('manager@propertymgt.com', 'Manager@123456')">
+            Manager
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-sm btn-outline-secondary flex-grow-1" 
+            (click)="fillDemo('tenant@propertymgt.com', 'Tenant@123456')">
+            Tenant
+          </button>
+        </div>
+      </div>
+
+      <!-- Register Link -->
+      <div class="text-center mt-4 pt-2 small text-muted">
+        Don't have an account? 
+        <a routerLink="/register" class="text-primary fw-semibold text-decoration-none">Sign Up</a>
+      </div>
+    </div>
+  </div>
+
+  <app-toast-container></app-toast-container>
+</div>

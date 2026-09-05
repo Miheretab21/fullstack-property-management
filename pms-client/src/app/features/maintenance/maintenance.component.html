@@ -1,0 +1,158 @@
+<div class="container-fluid p-0">
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">Maintenance Requests</h2>
+      <p class="text-muted small mb-0">Submit repair tickets, dispatch technicians, and track resolution progress</p>
+    </div>
+    <button 
+      type="button" 
+      class="btn btn-primary d-flex align-items-center gap-2" 
+      (click)="openCreateModal()">
+      <i class="bi bi-tools"></i>
+      New Maintenance Ticket
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="mt-2 text-muted small">Loading maintenance tickets...</div>
+  </div>
+
+  <!-- Tickets Grid -->
+  <div *ngIf="!isLoading()" class="row g-4">
+    <div *ngIf="requests().length === 0" class="col-12 text-center py-5">
+      <i class="bi bi-clipboard-check text-muted" style="font-size: 3rem;"></i>
+      <h5 class="mt-3 fw-bold">No Maintenance Requests</h5>
+      <p class="text-muted small">Everything is in working order!</p>
+    </div>
+
+    <div *ngFor="let req of requests()" class="col-md-6 col-xl-4">
+      <div class="card card-hover h-100 shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <span class="badge" [ngClass]="getPriorityBadgeClass(req.priority)">
+              {{ req.priority }} Priority
+            </span>
+            <span class="badge-status" [ngClass]="'status-' + req.status.toLowerCase()">
+              {{ req.status }}
+            </span>
+          </div>
+
+          <h5 class="fw-bold text-dark mt-2 mb-1">{{ req.title }}</h5>
+          <div class="text-muted small mb-3">
+            <i class="bi bi-door-open me-1"></i>
+            Unit {{ req.unitNumber }} ({{ req.propertyName }})
+          </div>
+
+          <p class="text-secondary small mb-3 text-truncate-2">
+            {{ req.description }}
+          </p>
+
+          <div *ngIf="req.assignedTechnician" class="small text-muted mb-2">
+            <i class="bi bi-person-gear me-1"></i>Tech: <strong>{{ req.assignedTechnician }}</strong>
+          </div>
+
+          <div *ngIf="req.resolutionNotes" class="p-2 bg-light rounded-3 small text-muted mb-3 border-start border-3 border-success">
+            <strong>Resolution:</strong> {{ req.resolutionNotes }}
+          </div>
+
+          <!-- Action button for Managers & Admins -->
+          <div *ngIf="authStore.isAdmin() || authStore.isPropertyManager()" class="pt-3 border-top d-flex justify-content-between align-items-center gap-2">
+            <button 
+              type="button" 
+              class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+              (click)="deleteTicket(req)"
+              title="Delete Maintenance Ticket">
+              <i class="bi bi-trash"></i>
+              <span>Delete</span>
+            </button>
+            <button 
+              *ngIf="req.status !== 'Closed'"
+              type="button" 
+              class="btn btn-outline-primary btn-sm ms-auto" 
+              (click)="openStatusModal(req)">
+              Update Status / Assign
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Ticket Modal -->
+  <app-modal 
+    [isOpen]="isCreateModalOpen()" 
+    title="Submit Maintenance Ticket" 
+    icon="bi-tools"
+    (closed)="isCreateModalOpen.set(false)">
+    <form [formGroup]="ticketForm" (ngSubmit)="submitTicket()">
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Rentable Unit</label>
+        <select class="form-select" formControlName="unitId">
+          <option value="" disabled>Select Unit</option>
+          <option *ngFor="let u of availableUnits()" [value]="u.id">
+            Unit {{ u.unitNumber }} ({{ u.propertyName || 'Property' }})
+          </option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Issue Title</label>
+        <input type="text" class="form-control" formControlName="title" placeholder="e.g. Water leak under sink">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Priority Level</label>
+        <select class="form-select" formControlName="priority">
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Detailed Description</label>
+        <textarea class="form-control" rows="3" formControlName="description" placeholder="Describe the issue..."></textarea>
+      </div>
+
+      <div modal-footer class="d-flex justify-content-end gap-2 w-100">
+        <button type="button" class="btn btn-light" (click)="isCreateModalOpen.set(false)">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="ticketForm.invalid">Submit Ticket</button>
+      </div>
+    </form>
+  </app-modal>
+
+  <!-- Update Status Modal -->
+  <app-modal 
+    [isOpen]="isStatusModalOpen()" 
+    title="Update Request Status" 
+    icon="bi-check-circle"
+    (closed)="isStatusModalOpen.set(false)">
+    <form [formGroup]="statusForm" (ngSubmit)="submitStatusUpdate()">
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Status</label>
+        <select class="form-select" formControlName="status">
+          <option value="Open">Open</option>
+          <option value="InProgress">In Progress</option>
+          <option value="Closed">Closed / Resolved</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Assigned Technician</label>
+        <input type="text" class="form-control" formControlName="assignedTechnician" placeholder="e.g. Mike the Plumber">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Resolution Notes</label>
+        <textarea class="form-control" rows="3" formControlName="resolutionNotes" placeholder="Notes on fix..."></textarea>
+      </div>
+
+      <div modal-footer class="d-flex justify-content-end gap-2 w-100">
+        <button type="button" class="btn btn-light" (click)="isStatusModalOpen.set(false)">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </app-modal>
+</div>

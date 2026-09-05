@@ -1,0 +1,35 @@
+<header class="navbar navbar-expand bg-white border-bottom px-4 py-2 sticky-top shadow-sm">
+  <div class="container-fluid p-0">
+    <!-- Sidebar Toggle Button -->
+    <button 
+      type="button" 
+      class="btn btn-light btn-sm border-0 d-flex align-items-center justify-content-center p-2 rounded-3 me-3" 
+      (click)="appStore.toggleSidebar()" 
+      title="Toggle Sidebar">
+      <i class="bi bi-list fs-5"></i>
+    </button>
+
+    <div class="d-none d-sm-block text-muted small fw-medium">
+      Property Management Portal
+    </div>
+
+    <!-- Right Side User Actions -->
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-secondary-subtle text-secondary border">
+          {{ authStore.roles()[0] || 'User' }}
+        </span>
+        <span class="fw-semibold small d-none d-md-inline">{{ authStore.fullName() }}</span>
+      </div>
+
+      <button 
+        type="button" 
+        class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2 px-3 rounded-3" 
+        (click)="authStore.logout()" 
+        title="Log Out">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="d-none d-sm-inline">Sign Out</span>
+      </button>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,283 @@
+<div class="container-fluid p-0">
+  <!-- Header -->
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">Lease Agreements</h2>
+      <p class="text-muted small mb-0">Manage and monitor residential and commercial leasing contracts</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary d-flex align-items-center gap-2"
+        (click)="loadLeases()">
+        <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+        Refresh
+      </button>
+      <button 
+        *ngIf="authStore.isAdmin() || authStore.isPropertyManager()"
+        type="button" 
+        class="btn btn-primary d-flex align-items-center gap-2" 
+        (click)="openCreateModal()">
+        <i class="bi bi-file-earmark-plus-fill"></i>
+        <span>New Lease Agreement</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="card-body p-3">
+      <div class="row g-3 align-items-center">
+        <div class="col-12 col-md-7">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input 
+              type="text" 
+              class="form-control border-start-0 ps-0" 
+              placeholder="Search by tenant name, email, property, or unit..."
+              [value]="searchTerm()"
+              (input)="onSearchInput($event)">
+          </div>
+        </div>
+        <div class="col-12 col-md-5">
+          <div class="btn-group w-100" role="group">
+            <button 
+              type="button" 
+              class="btn btn-sm" 
+              [class.btn-primary]="statusFilter() === 'ALL'"
+              [class.btn-outline-secondary]="statusFilter() !== 'ALL'"
+              (click)="statusFilter.set('ALL')">
+              All ({{ leases().length }})
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-sm" 
+              [class.btn-primary]="statusFilter() === 'ACTIVE'"
+              [class.btn-outline-secondary]="statusFilter() !== 'ACTIVE'"
+              (click)="statusFilter.set('ACTIVE')">
+              Active ({{ activeLeasesCount() }})
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-sm" 
+              [class.btn-primary]="statusFilter() === 'TERMINATED'"
+              [class.btn-outline-secondary]="statusFilter() !== 'TERMINATED'"
+              (click)="statusFilter.set('TERMINATED')">
+              Terminated ({{ terminatedLeasesCount() }})
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="mt-2 text-muted small">Loading lease agreements...</div>
+  </div>
+
+  <!-- Leases Table -->
+  <div *ngIf="!isLoading()" class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light small text-uppercase">
+          <tr>
+            <th class="ps-4">Property / Unit</th>
+            <th>Tenant</th>
+            <th>Contract Period</th>
+            <th>Monthly Rent</th>
+            <th>Security Deposit</th>
+            <th>Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="small">
+          <tr *ngIf="filteredLeases().length === 0">
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-file-earmark-text text-muted" style="font-size: 2.5rem;"></i>
+              <div class="mt-2 fw-medium">No lease agreements found.</div>
+            </td>
+          </tr>
+          <tr *ngFor="let lease of filteredLeases()">
+            <td class="ps-4">
+              <div class="fw-bold text-dark">{{ lease.propertyName }}</div>
+              <div class="text-muted small">Unit {{ lease.unitNumber }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold text-dark">{{ lease.tenantName }}</div>
+              <div class="text-muted small">{{ lease.tenantEmail }}</div>
+            </td>
+            <td>
+              <div class="fw-medium">{{ lease.startDate | date:'mediumDate' }}</div>
+              <div class="text-muted small">to {{ lease.endDate | date:'mediumDate' }}</div>
+            </td>
+            <td class="fw-bold text-dark">ETB {{ lease.monthlyRent | number:'1.2-2' }}</td>
+            <td>ETB {{ lease.securityDeposit | number:'1.2-2' }}</td>
+            <td>
+              <span class="badge rounded-pill px-3 py-2" [ngClass]="lease.isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border'">
+                {{ lease.isActive ? 'Active' : 'Terminated' }}
+              </span>
+            </td>
+            <td class="text-end pe-4">
+              <div class="d-flex align-items-center justify-content-end gap-2">
+                <button 
+                  *ngIf="lease.isActive"
+                  type="button" 
+                  class="btn btn-sm btn-outline-success d-flex align-items-center gap-1"
+                  (click)="openPayCheckModal(lease)"
+                  title="Receive check or rent payment for this lease">
+                  <i class="bi bi-card-checklist"></i>
+                  <span>Pay / Check</span>
+                </button>
+                <button 
+                  *ngIf="(authStore.isAdmin() || authStore.isPropertyManager()) && lease.isActive"
+                  type="button" 
+                  class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1" 
+                  (click)="terminateLease(lease.id)"
+                  title="Terminate Agreement">
+                  <i class="bi bi-x-circle"></i>
+                  <span class="d-none d-lg-inline">Terminate</span>
+                </button>
+                <button 
+                  *ngIf="authStore.isAdmin() || authStore.isPropertyManager()"
+                  type="button" 
+                  class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" 
+                  (click)="deleteLease(lease)"
+                  title="Delete Agreement Permanently">
+                  <i class="bi bi-trash"></i>
+                  <span class="d-none d-lg-inline">Delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Direct Check Payment Modal -->
+  <app-modal 
+    [isOpen]="isPayCheckModalOpen()" 
+    title="Receive Check / Record Lease Payment" 
+    icon="bi-card-checklist"
+    (closed)="isPayCheckModalOpen.set(false)">
+    <div *ngIf="selectedLeaseForPayment()" class="mb-3 p-3 bg-light rounded-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="small text-muted">Lease Agreement:</div>
+          <div class="fw-bold text-dark">{{ selectedLeaseForPayment()!.propertyName }} - Unit {{ selectedLeaseForPayment()!.unitNumber }}</div>
+          <div class="small text-secondary">Tenant: {{ selectedLeaseForPayment()!.tenantName }}</div>
+        </div>
+        <div class="text-end">
+          <div class="small text-muted">Monthly Rate:</div>
+          <div class="fw-bold text-success fs-6">ETB {{ selectedLeaseForPayment()!.monthlyRent | number:'1.2-2' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="payCheckForm" (ngSubmit)="submitDirectCheckPayment()">
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Payment Method <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="paymentMethod">
+            <option value="Check">Check (Bank Cheque)</option>
+            <option value="Bank Transfer (CBE)">Commercial Bank of Ethiopia (CBE)</option>
+            <option value="Bank Transfer (Awash)">Awash Bank</option>
+            <option value="Bank Transfer (Dashen)">Dashen Bank</option>
+            <option value="Bank Transfer (Abyssinia)">Bank of Abyssinia</option>
+            <option value="Cash">Cash / In-Person</option>
+            <option value="Telebirr">Telebirr / CBE Birr</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Amount Paid (ETB) <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" formControlName="amount" min="1">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3" *ngIf="payCheckForm.get('paymentMethod')?.value === 'Check'">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Check / Cheque Number <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="checkNumber" placeholder="e.g. CHK-582019">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Issuing Bank <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="bankName" placeholder="e.g. Awash Bank">
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 w-100 mt-4">
+        <button type="button" class="btn btn-light" (click)="isPayCheckModalOpen.set(false)">Cancel</button>
+        <button type="submit" class="btn btn-success" [disabled]="payCheckForm.invalid || isSubmittingPayment()">
+          <span *ngIf="isSubmittingPayment()" class="spinner-border spinner-border-sm me-1"></span>
+          Confirm Money Received
+        </button>
+      </div>
+    </form>
+  </app-modal>
+
+  <!-- Create Lease Agreement Modal -->
+  <app-modal 
+    [isOpen]="isCreateModalOpen()" 
+    title="Create New Lease Agreement" 
+    icon="bi-file-earmark-text"
+    modalSizeClass="modal-lg-custom"
+    (closed)="isCreateModalOpen.set(false)">
+    <form [formGroup]="leaseForm" (ngSubmit)="submitLease()">
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Select Rentable Unit <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="unitId" (change)="onUnitChange($event)">
+            <option value="" disabled selected>-- Select Available Unit --</option>
+            <option *ngFor="let u of availableUnits()" [value]="u.id">
+              {{ u.propertyName || 'Property' }} - Unit {{ u.unitNumber }} (ETB {{ u.rentAmount | number:'1.0-0' }}/mo)
+            </option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Select Tenant <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="tenantId">
+            <option value="" disabled selected>-- Select Tenant --</option>
+            <option *ngFor="let t of availableTenants()" [value]="t.id">
+              {{ t.firstName }} {{ t.lastName }} ({{ t.email }})
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Lease Start Date <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" formControlName="startDate">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Lease End Date <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" formControlName="endDate">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Monthly Rent (ETB) <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" formControlName="monthlyRent" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Security Deposit (ETB) <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" formControlName="securityDeposit" min="0">
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 w-100">
+        <button type="button" class="btn btn-light" (click)="isCreateModalOpen.set(false)">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4" [disabled]="leaseForm.invalid || isSubmitting()">
+          <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-1"></span>
+          Create Agreement
+        </button>
+      </div>
+    </form>
+  </app-modal>
+</div>

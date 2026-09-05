@@ -1,0 +1,48 @@
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 0.9rem;
+}
+
+.avatar-admin {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
+.avatar-manager {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.avatar-tenant {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.bg-purple-subtle {
+  background-color: #f3e8ff !important;
+}
+
+.text-purple {
+  color: #7e22ce !important;
+}
+
+.border-purple-subtle {
+  border-color: #e9d5ff !important;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}

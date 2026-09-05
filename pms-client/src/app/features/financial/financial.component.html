@@ -1,0 +1,220 @@
+<div class="container-fluid p-0">
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">Financial Ledger</h2>
+      <p class="text-muted small mb-0">Record check deposits, track incoming rent payments, and verify cleared funds</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary d-flex align-items-center gap-2"
+        (click)="loadTransactions()">
+        <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+        Refresh
+      </button>
+      <button 
+        *ngIf="authStore.isAdmin() || authStore.isPropertyManager()"
+        type="button" 
+        class="btn btn-primary d-flex align-items-center gap-2"
+        (click)="openDirectPaymentModal()">
+        <i class="bi bi-plus-circle"></i>
+        Record Incoming Payment / Check
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="mt-2 text-muted small">Loading ledger transactions...</div>
+  </div>
+
+  <!-- Transactions Table -->
+  <div *ngIf="!isLoading()" class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light small text-uppercase">
+          <tr>
+            <th class="ps-4">Date</th>
+            <th>Unit / Property</th>
+            <th>Tenant</th>
+            <th>Payment Method / Details</th>
+            <th>Status (Money In)</th>
+            <th>Amount</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="small">
+          <tr *ngIf="transactions().length === 0">
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-wallet2 text-muted fs-1 d-block mb-2"></i>
+              No transaction records found in the ledger.
+            </td>
+          </tr>
+          <tr *ngFor="let tx of transactions()">
+            <td class="ps-4 text-muted">{{ tx.paymentDate | date:'mediumDate' }}</td>
+            <td>
+              <div class="fw-bold text-dark">{{ tx.propertyName }}</div>
+              <div class="text-muted small">Unit {{ tx.unitNumber }}</div>
+            </td>
+            <td>{{ tx.tenantName }}</td>
+            <td>
+              <span *ngIf="isCheckMethod(tx.paymentMethod)" class="badge bg-purple-subtle text-purple border d-inline-flex align-items-center gap-1">
+                <i class="bi bi-card-checklist"></i>
+                {{ tx.paymentMethod }}
+              </span>
+              <span *ngIf="!isCheckMethod(tx.paymentMethod)" class="badge bg-light text-dark border">
+                {{ tx.paymentMethod }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="tx.status === 'Paid'" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                <i class="bi bi-check-circle-fill me-1"></i>Money Received (Paid)
+              </span>
+              <span *ngIf="tx.status === 'Pending'" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                <i class="bi bi-clock-history me-1"></i>Pending Clearance
+              </span>
+              <span *ngIf="tx.status === 'Overdue'" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                <i class="bi bi-exclamation-circle-fill me-1"></i>Overdue
+              </span>
+            </td>
+            <td class="fw-bold fs-6 text-dark">ETB {{ tx.amount | number:'1.2-2' }}</td>
+            <td class="text-end pe-4">
+              <button 
+                *ngIf="tx.status === 'Pending'"
+                type="button" 
+                class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 ms-auto" 
+                (click)="openPaymentModal(tx)">
+                <i class="bi bi-check2-circle"></i>
+                Pay / Settle
+              </button>
+              <span *ngIf="tx.status === 'Paid'" class="text-success small fw-semibold">
+                <i class="bi bi-patch-check-fill me-1"></i>Settled
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Settle Pending Transaction Modal -->
+  <app-modal 
+    [isOpen]="isPayModalOpen()" 
+    title="Record / Settle Rent Payment" 
+    icon="bi-cash-coin"
+    (closed)="isPayModalOpen.set(false)">
+    <div *ngIf="selectedTx()" class="mb-3 p-3 bg-light rounded-3">
+      <div class="small text-muted">Paying for:</div>
+      <div class="fw-bold fs-6 text-dark">{{ selectedTx()!.propertyName }} - Unit {{ selectedTx()!.unitNumber }}</div>
+      <div class="small text-secondary">Tenant: {{ selectedTx()!.tenantName }}</div>
+      <div class="fs-5 fw-bold text-success mt-1">ETB {{ selectedTx()!.amount | number:'1.2-2' }}</div>
+    </div>
+
+    <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Payment Method</label>
+        <select class="form-select" formControlName="paymentMethod">
+          <option value="Check">Check (Bank Cheque)</option>
+          <option value="Bank Transfer (CBE)">Commercial Bank of Ethiopia (CBE)</option>
+          <option value="Bank Transfer (Awash)">Awash Bank</option>
+          <option value="Bank Transfer (Dashen)">Dashen Bank</option>
+          <option value="Bank Transfer (Abyssinia)">Bank of Abyssinia</option>
+          <option value="Cash">Cash / In-Person</option>
+          <option value="Telebirr">Telebirr / CBE Birr</option>
+        </select>
+      </div>
+
+      <div class="row g-3 mb-3" *ngIf="paymentForm.get('paymentMethod')?.value === 'Check'">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Check / Cheque Number</label>
+          <input type="text" class="form-control" formControlName="checkNumber" placeholder="e.g. CHK-94021">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Issuing Bank</label>
+          <input type="text" class="form-control" formControlName="bankName" placeholder="e.g. Commercial Bank of Ethiopia">
+        </div>
+      </div>
+
+      <div class="p-2 mb-3 rounded-2 bg-success-subtle text-success small border border-success-subtle">
+        <i class="bi bi-info-circle me-1"></i>
+        Confirming this will mark the transaction as <strong>Paid (Money Received)</strong> and recalculate collection metrics.
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 w-100 mt-4">
+        <button type="button" class="btn btn-light" (click)="isPayModalOpen.set(false)">Cancel</button>
+        <button type="submit" class="btn btn-success" [disabled]="paymentForm.invalid || isSubmitting()">
+          <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-1"></span>
+          Confirm Payment Received
+        </button>
+      </div>
+    </form>
+  </app-modal>
+
+  <!-- Direct Incoming Payment / Check Modal -->
+  <app-modal 
+    [isOpen]="isDirectModalOpen()" 
+    title="Record Incoming Payment / Check" 
+    icon="bi-card-checklist"
+    modalSizeClass="modal-lg-custom"
+    (closed)="isDirectModalOpen.set(false)">
+    <form [formGroup]="directPaymentForm" (ngSubmit)="submitDirectPayment()">
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Select Active Lease <span class="text-danger">*</span></label>
+        <select class="form-select" formControlName="leaseId" (change)="onLeaseSelect($event)">
+          <option value="" disabled selected>-- Choose Lease Agreement --</option>
+          <option *ngFor="let l of activeLeases()" [value]="l.id">
+            {{ l.propertyName }} - Unit {{ l.unitNumber }} ({{ l.tenantName }}) — ETB {{ l.monthlyRent | number:'1.0-0' }}/mo
+          </option>
+        </select>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Payment Method <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="paymentMethod">
+            <option value="Check">Check (Bank Cheque)</option>
+            <option value="Bank Transfer (CBE)">Commercial Bank of Ethiopia (CBE)</option>
+            <option value="Bank Transfer (Awash)">Awash Bank</option>
+            <option value="Bank Transfer (Dashen)">Dashen Bank</option>
+            <option value="Cash">Cash / In-Person</option>
+            <option value="Telebirr">Telebirr / CBE Birr</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Amount Received (ETB) <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text">ETB</span>
+            <input type="number" class="form-control" formControlName="amount" min="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3" *ngIf="directPaymentForm.get('paymentMethod')?.value === 'Check'">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Check / Cheque Number <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="checkNumber" placeholder="e.g. CHK-77102">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Issuing Bank <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="bankName" placeholder="e.g. Awash Bank">
+        </div>
+      </div>
+
+      <div class="form-check p-2 rounded-2 bg-light border mb-3">
+        <input class="form-check-input ms-1" type="checkbox" id="directCleared" formControlName="isCleared">
+        <label class="form-check-label small fw-semibold text-success ms-2" for="directCleared">
+          <i class="bi bi-check-circle-fill me-1"></i> Money Came In (Mark as Paid & Settle Immediately)
+        </label>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 w-100 mt-4">
+        <button type="button" class="btn btn-light" (click)="isDirectModalOpen.set(false)">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="directPaymentForm.invalid || isSubmitting()">
+          <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-1"></span>
+          Record Payment
+        </button>
+      </div>
+    </form>
+  </app-modal>
+</div>

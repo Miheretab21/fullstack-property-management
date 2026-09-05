@@ -1,0 +1,392 @@
+<div class="container-fluid p-0">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">Executive Dashboard</h2>
+      <p class="text-muted small mb-0">Overview of portfolio performance, occupancy, and ledger records</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2" (click)="loadMetrics()">
+        <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+        Refresh
+      </button>
+      <a *ngIf="authStore.isAdmin() || authStore.isPropertyManager()" routerLink="/properties" class="btn btn-primary btn-sm d-flex align-items-center gap-2">
+        <i class="bi bi-plus-lg"></i>
+        Manage Properties
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading dashboard metrics...</span>
+    </div>
+    <div class="mt-2 text-muted small">Loading portfolio metrics...</div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading() && metrics()" class="fade-in">
+    <!-- KPI Stat Cards Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-xl-3">
+        <app-stat-card 
+          label="Occupancy Rate" 
+          [value]="metrics()!.occupancyRate + '%'"
+          [badgeText]="metrics()!.occupiedUnits + ' / ' + metrics()!.totalUnits + ' Units'"
+          icon="bi-pie-chart-fill"
+          iconBgClass="bg-primary-subtle"
+          iconColorClass="text-primary"
+          subtitle="Occupied rentable units">
+        </app-stat-card>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <app-stat-card 
+          label="Projected Rent" 
+          [value]="'ETB ' + (metrics()!.totalMonthlyProjectedRevenue | number:'1.2-2')"
+          icon="bi-cash-coin"
+          iconBgClass="bg-success-subtle"
+          iconColorClass="text-success"
+          badgeText="Monthly"
+          subtitle="Scheduled active lease rent">
+        </app-stat-card>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <app-stat-card 
+          label="Collected This Month" 
+          [value]="'ETB ' + (metrics()!.currentMonthCollectedRevenue | number:'1.2-2')"
+          icon="bi-check2-circle"
+          iconBgClass="bg-info-subtle"
+          iconColorClass="text-info"
+          [badgeText]="'ETB ' + (metrics()!.currentMonthPendingRevenue | number:'1.2-2') + ' Pending'"
+          badgeClass="bg-warning-subtle text-warning-emphasis"
+          subtitle="Rent payments logged">
+        </app-stat-card>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <app-stat-card 
+          label="Active Repairs" 
+          [value]="metrics()!.activeMaintenanceRequests"
+          icon="bi-tools"
+          iconBgClass="bg-warning-subtle"
+          iconColorClass="text-warning-emphasis"
+          [badgeText]="metrics()!.activeMaintenanceRequests > 0 ? 'Action Needed' : 'All Clear'"
+          [badgeClass]="metrics()!.activeMaintenanceRequests > 0 ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success'"
+          subtitle="Open maintenance tickets">
+        </app-stat-card>
+      </div>
+    </div>
+
+    <!-- Analytical Summary Charts Row -->
+    <div class="row g-4 mb-4">
+      <!-- Unit Status Breakdown Donut Chart -->
+      <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4 p-4 bg-white">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold mb-0 fs-6 d-flex align-items-center gap-2">
+              <i class="bi bi-pie-chart text-primary"></i>
+              Portfolio Unit Distribution
+            </h5>
+            <span class="badge bg-light text-muted border">{{ metrics()!.totalUnits }} Total Units</span>
+          </div>
+
+          <div class="row align-items-center g-3">
+            <!-- SVG Donut Chart -->
+            <div class="col-sm-5 text-center">
+              <div class="position-relative d-inline-block">
+                <svg width="150" height="150" viewBox="0 0 42 42" class="donut-chart">
+                  <!-- Base Ring -->
+                  <circle class="donut-ring" cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" stroke-width="4"></circle>
+                  <!-- Occupied Segment -->
+                  <circle class="donut-segment text-primary" cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" stroke-width="4"
+                          [attr.stroke-dasharray]="getOccupiedPct() + ' ' + (100 - getOccupiedPct())"
+                          stroke-dashoffset="25"></circle>
+                  <!-- Vacant Segment -->
+                  <circle class="donut-segment text-success" cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" stroke-width="4"
+                          [attr.stroke-dasharray]="getVacantPct() + ' ' + (100 - getVacantPct())"
+                          [attr.stroke-dashoffset]="25 - getOccupiedPct()"></circle>
+                  <!-- Maintenance Segment -->
+                  <circle class="donut-segment text-warning" cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" stroke-width="4"
+                          [attr.stroke-dasharray]="getMaintenancePct() + ' ' + (100 - getMaintenancePct())"
+                          [attr.stroke-dashoffset]="25 - getOccupiedPct() - getVacantPct()"></circle>
+                  <!-- Under Finishing Segment -->
+                  <circle class="donut-segment" cx="21" cy="21" r="15.915" fill="transparent" stroke="#8b5cf6" stroke-width="4"
+                          [attr.stroke-dasharray]="getFinishingPct() + ' ' + (100 - getFinishingPct())"
+                          [attr.stroke-dashoffset]="25 - getOccupiedPct() - getVacantPct() - getMaintenancePct()"></circle>
+                </svg>
+                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                  <div class="fs-4 fw-bold text-dark">{{ metrics()!.occupancyRate }}%</div>
+                  <div class="text-muted small" style="font-size: 0.65rem;">OCCUPIED</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legend & Values -->
+            <div class="col-sm-7">
+              <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle bg-primary" style="width: 10px; height: 10px;"></span>
+                    <span class="small fw-medium">Occupied</span>
+                  </div>
+                  <div class="small fw-bold">{{ metrics()!.occupiedUnits }} units ({{ getOccupiedPct() }}%)</div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle bg-success" style="width: 10px; height: 10px;"></span>
+                    <span class="small fw-medium">Vacant</span>
+                  </div>
+                  <div class="small fw-bold">{{ metrics()!.vacantUnits }} units ({{ getVacantPct() }}%)</div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle bg-warning" style="width: 10px; height: 10px;"></span>
+                    <span class="small fw-medium">Maintenance</span>
+                  </div>
+                  <div class="small fw-bold">{{ metrics()!.maintenanceUnits }} units ({{ getMaintenancePct() }}%)</div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #8b5cf6;"></span>
+                    <span class="small fw-medium">Under Finishing</span>
+                  </div>
+                  <div class="small fw-bold">{{ metrics()!.finishingUnits || 0 }} units ({{ getFinishingPct() }}%)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Collection Performance Progress Chart -->
+      <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4 p-4 bg-white">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold mb-0 fs-6 d-flex align-items-center gap-2">
+              <i class="bi bi-bar-chart-line text-success"></i>
+              Monthly Revenue Collection Rate
+            </h5>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success-subtle text-success border border-success-subtle">
+                {{ getCollectionPct() }}% Realized
+              </span>
+              <button 
+                *ngIf="authStore.isAdmin() || authStore.isPropertyManager()"
+                type="button" 
+                class="btn btn-outline-primary btn-sm py-1 px-2 d-flex align-items-center gap-1"
+                (click)="openTargetModal()"
+                title="Set Monthly Revenue Target">
+                <i class="bi bi-sliders"></i>
+                <span class="small">Set Target</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Multi-Segment Progress Bar -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small text-muted mb-1">
+              <span>
+                Target: <strong>ETB {{ getEffectiveTarget() | number:'1.2-2' }}</strong>
+                <span *ngIf="isCustomTarget()" class="badge bg-primary-subtle text-primary ms-1" style="font-size: 0.65rem;">Custom Goal</span>
+                <span *ngIf="!isCustomTarget()" class="badge bg-secondary-subtle text-secondary ms-1" style="font-size: 0.65rem;">Auto (Leases)</span>
+              </span>
+              <span class="fw-bold text-dark">{{ getCollectionPct() }}% of Goal</span>
+            </div>
+            <div class="progress" style="height: 12px; border-radius: 6px;">
+              <div class="progress-bar bg-success" role="progressbar" 
+                   [style.width.%]="getCollectionPct()" 
+                   title="Collected"></div>
+              <div class="progress-bar bg-warning" role="progressbar" 
+                   [style.width.%]="getPendingPct()" 
+                   title="Pending"></div>
+            </div>
+          </div>
+
+          <!-- Revenue Breakdown Pillars -->
+          <div class="row g-2 mt-2 text-center">
+            <div class="col-4">
+              <div class="p-2 border rounded-3 bg-light">
+                <div class="text-muted small" style="font-size: 0.7rem;">Collected</div>
+                <div class="fw-bold text-success small">ETB {{ metrics()!.currentMonthCollectedRevenue | number:'1.0-0' }}</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 border rounded-3 bg-light">
+                <div class="text-muted small" style="font-size: 0.7rem;">Pending</div>
+                <div class="fw-bold text-warning small">ETB {{ metrics()!.currentMonthPendingRevenue | number:'1.0-0' }}</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 border rounded-3 bg-light">
+                <div class="text-muted small" style="font-size: 0.7rem;">Projected (Leases)</div>
+                <div class="fw-bold text-primary small">ETB {{ metrics()!.totalMonthlyProjectedRevenue | number:'1.0-0' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-muted small mt-3" style="font-size: 0.75rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            Goal progress measures collected rent against {{ isCustomTarget() ? 'your custom business target' : 'total scheduled lease rent' }}.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Tables Grid -->
+    <div class="row g-4">
+      <!-- Expiring Leases Alert Card -->
+      <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4">
+          <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-bold fs-6 d-flex align-items-center gap-2">
+              <i class="bi bi-calendar-event text-warning"></i>
+              Leases Expiring Soon (Next 30 Days)
+            </h5>
+            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">
+              {{ metrics()!.expiringLeases.length }} Upcoming
+            </span>
+          </div>
+          <div class="card-body p-0">
+            <div *ngIf="metrics()!.expiringLeases.length === 0" class="text-center text-muted py-5 small">
+              <i class="bi bi-shield-check fs-2 text-success d-block mb-2"></i>
+              No active leases are expiring in the next 30 days.
+            </div>
+
+            <div *ngIf="metrics()!.expiringLeases.length > 0" class="table-responsive">
+              <table class="table align-middle table-hover mb-0">
+                <thead class="table-light small text-uppercase">
+                  <tr>
+                    <th class="ps-4">Unit</th>
+                    <th>Tenant</th>
+                    <th>End Date</th>
+                    <th>Rent</th>
+                    <th class="text-end pe-4">Days Left</th>
+                  </tr>
+                </thead>
+                <tbody class="small">
+                  <tr *ngFor="let lease of metrics()!.expiringLeases">
+                    <td class="ps-4 fw-semibold text-primary">
+                      {{ lease.unitNumber }} <span class="text-muted fw-normal">({{ lease.propertyName }})</span>
+                    </td>
+                    <td>{{ lease.tenantName }}</td>
+                    <td>{{ lease.endDate | date:'mediumDate' }}</td>
+                    <td class="fw-semibold">ETB {{ lease.monthlyRent | number:'1.2-2' }}</td>
+                    <td class="text-end pe-4">
+                      <span class="badge" [ngClass]="lease.daysRemaining <= 7 ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning-emphasis'">
+                        {{ lease.daysRemaining }} days
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Ledger Transactions -->
+      <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0 rounded-4">
+          <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-bold fs-6 d-flex align-items-center gap-2">
+              <i class="bi bi-receipt text-primary"></i>
+              Recent Ledger Activity
+            </h5>
+            <a routerLink="/financial" class="small text-decoration-none fw-semibold">View All</a>
+          </div>
+          <div class="card-body p-0">
+            <div *ngIf="metrics()!.recentTransactions.length === 0" class="text-center text-muted py-5 small">
+              No recent financial transactions logged.
+            </div>
+
+            <div *ngIf="metrics()!.recentTransactions.length > 0" class="table-responsive">
+              <table class="table align-middle table-hover mb-0">
+                <thead class="table-light small text-uppercase">
+                  <tr>
+                    <th class="ps-4">Date</th>
+                    <th>Unit / Tenant</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Amount</th>
+                  </tr>
+                </thead>
+                <tbody class="small">
+                  <tr *ngFor="let tx of metrics()!.recentTransactions">
+                    <td class="ps-4 text-muted">{{ tx.paymentDate | date:'shortDate' }}</td>
+                    <td>
+                      <div class="fw-semibold">{{ tx.tenantName }}</div>
+                      <div class="text-muted small" style="font-size: 0.75rem;">Unit {{ tx.unitNumber }}</div>
+                    </td>
+                    <td>{{ tx.paymentMethod }}</td>
+                    <td>
+                      <span class="badge-status" [ngClass]="'status-' + tx.status.toLowerCase()">
+                        {{ tx.status }}
+                      </span>
+                    </td>
+                    <td class="text-end pe-4 fw-bold">
+                      ETB {{ tx.amount | number:'1.2-2' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue Target Modal -->
+  <app-modal 
+    [isOpen]="isTargetModalOpen()" 
+    title="Configure Monthly Revenue Target" 
+    icon="bi-sliders"
+    (closed)="closeTargetModal()">
+    <div>
+      <p class="text-muted small mb-3">
+        Choose how your monthly revenue collection progress is evaluated. You can use dynamic lease-projected revenue or define a custom financial benchmark.
+      </p>
+
+      <div class="mb-3">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="radio" name="targetType" id="targetAuto" [value]="false" [(ngModel)]="targetInputIsCustom">
+          <label class="form-check-label fw-semibold small" for="targetAuto">
+            Automatic Target (Calculated from Active Leases)
+          </label>
+          <div class="text-muted small ps-4">
+            Target is dynamically evaluated as the sum of all scheduled monthly active lease rents (Currently <strong>ETB {{ (metrics()?.totalMonthlyProjectedRevenue || 0) | number:'1.2-2' }}</strong>).
+          </div>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="targetType" id="targetCustom" [value]="true" [(ngModel)]="targetInputIsCustom">
+          <label class="form-check-label fw-semibold small" for="targetCustom">
+            Custom Financial Goal
+          </label>
+          <div class="text-muted small ps-4">
+            Specify a fixed monthly revenue milestone for business budgeting and KPI tracking.
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4" *ngIf="targetInputIsCustom">
+        <label class="form-label small fw-semibold">Monthly Revenue Target (ETB)</label>
+        <div class="input-group">
+          <span class="input-group-text">ETB</span>
+          <input type="number" class="form-control" [(ngModel)]="customTargetInput" placeholder="e.g. 500000" min="1">
+        </div>
+        <div class="form-text small">Enter positive target amount in Ethiopian Birr.</div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 w-100 mt-4">
+        <button type="button" class="btn btn-light" (click)="closeTargetModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="saveTarget()">
+          Apply Target
+        </button>
+      </div>
+    </div>
+  </app-modal>
+</div>

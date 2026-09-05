@@ -1,0 +1,84 @@
+<aside class="sidebar d-flex flex-column" [class.collapsed]="appStore.sidebarCollapsed()">
+  <!-- Brand Logo -->
+  <div class="sidebar-header p-3 d-flex align-items-center justify-content-between border-bottom border-secondary border-opacity-25">
+    <div class="d-flex align-items-center gap-2 overflow-hidden">
+      <div class="logo-icon bg-primary text-white rounded-3 d-flex align-items-center justify-content-center">
+        <i class="bi bi-building fs-5"></i>
+      </div>
+      <span *ngIf="!appStore.sidebarCollapsed()" class="logo-text fw-bold text-white fs-5 text-truncate">
+        Property<span class="text-primary">Mgt</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Navigation Links -->
+  <div class="sidebar-nav flex-grow-1 p-2 overflow-auto">
+    <ul class="nav flex-column gap-1">
+      <!-- Dashboard (Admin & Manager) -->
+      <li *ngIf="authStore.isAdmin() || authStore.isPropertyManager()" class="nav-item">
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-grid-1x2-fill fs-5"></i>
+          <span *ngIf="!appStore.sidebarCollapsed()">Dashboard</span>
+        </a>
+      </li>
+
+      <!-- Properties & Units (All Roles) -->
+      <li class="nav-item">
+        <a routerLink="/properties" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-houses-fill fs-5"></i>
+          <span *ngIf="!appStore.sidebarCollapsed()">Properties & Units</span>
+        </a>
+      </li>
+
+      <!-- Leases (All Roles) -->
+      <li class="nav-item">
+        <a routerLink="/leases" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-file-earmark-text-fill fs-5"></i>
+          <span *ngIf="!appStore.sidebarCollapsed()">Leases</span>
+        </a>
+      </li>
+
+      <!-- Financial / Ledger (All Roles) -->
+      <li class="nav-item">
+        <a routerLink="/financial" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-wallet2 fs-5"></i>
+          <span *ngIf="!appStore.sidebarCollapsed()">Financial Ledger</span>
+        </a>
+      </li>
+
+      <!-- Maintenance Requests (All Roles) -->
+      <li class="nav-item">
+        <a routerLink="/maintenance" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-tools fs-5"></i>
+          <span *ngIf="!appStore.sidebarCollapsed()">Maintenance</span>
+        </a>
+      </li>
+
+      <!-- User Management (Admin Only) -->
+      <li *ngIf="authStore.isAdmin()" class="nav-item mt-3">
+        <div *ngIf="!appStore.sidebarCollapsed()" class="px-3 py-1 text-uppercase small text-muted fw-bold" style="font-size: 0.7rem;">
+          Administration
+        </div>
+        <a routerLink="/users" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-people-fill fs-5"></i>
+          <span *ngIf="!appStore.sidebarCollapsed()">User Management</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- User Role Indicator Footer -->
+  <div class="sidebar-footer p-3 border-top border-secondary border-opacity-25 text-white-50">
+    <div *ngIf="!appStore.sidebarCollapsed()" class="d-flex align-items-center gap-2">
+      <div class="user-avatar rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center">
+        {{ (authStore.currentUser()?.firstName || 'U')[0] }}
+      </div>
+      <div class="overflow-hidden">
+        <div class="text-white small fw-semibold text-truncate">{{ authStore.fullName() }}</div>
+        <span class="badge bg-primary text-white" style="font-size: 0.65rem;">
+          {{ authStore.roles()[0] || 'User' }}
+        </span>
+      </div>
+    </div>
+  </div>
+</aside>

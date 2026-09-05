@@ -1,0 +1,19 @@
+<div *ngIf="isOpen" class="modal-backdrop-custom fade show" (click)="onBackdropClick($event)">
+  <div class="modal-dialog-custom modal-dialog modal-dialog-centered" [ngClass]="modalSizeClass">
+    <div class="modal-content shadow-lg border rounded-4 bg-white" (click)="$event.stopPropagation()">
+      <div class="modal-header border-bottom py-3 px-4 bg-white">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+          <i *ngIf="icon" class="bi" [ngClass]="icon"></i>
+          {{ title }}
+        </h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="close()"></button>
+      </div>
+      <div class="modal-body p-4 bg-white">
+        <ng-content></ng-content>
+      </div>
+      <div *ngIf="showFooter" class="modal-footer border-top py-3 px-4 bg-light rounded-bottom-4">
+        <ng-content select="[modal-footer]"></ng-content>
+      </div>
+    </div>
+  </div>
+</div>

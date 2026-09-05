@@ -1,0 +1,49 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3 py-5 text-center">
+  <div class="card p-5 shadow-sm border-0 rounded-4" style="max-width: 500px; width: 100%;">
+    <div class="mb-3 text-danger">
+      <i class="bi bi-shield-slash-fill" style="font-size: 4rem;"></i>
+    </div>
+    <h3 class="fw-bold mb-2 text-dark">Access Denied</h3>
+    <p class="text-muted small mb-3">
+      You do not have the required permissions to access this page. Please log in with an authorized account or return to your accessible portal.
+    </p>
+
+    <!-- Current User Info (if logged in) -->
+    <div *ngIf="authStore.isAuthenticated() && authStore.currentUser()" class="p-3 bg-light rounded-3 mb-4 text-start small border">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted" style="font-size: 0.75rem;">Signed in as:</div>
+          <div class="fw-bold text-dark">{{ authStore.fullName() }}</div>
+          <div class="text-secondary" style="font-size: 0.75rem;">{{ authStore.currentUser()?.email }}</div>
+        </div>
+        <div>
+          <span class="badge bg-secondary">
+            {{ authStore.roles()[0] || 'User' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+      <!-- Direct Route to Login Page -->
+      <button 
+        type="button" 
+        class="btn btn-primary d-flex align-items-center justify-content-center gap-2 px-4 py-2 fw-medium"
+        (click)="goToLogin()">
+        <i class="bi bi-box-arrow-in-right"></i>
+        <span>Go to Login Page</span>
+      </button>
+
+      <!-- Return to allowed home page -->
+      <button 
+        *ngIf="authStore.isAuthenticated()" 
+        type="button" 
+        class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 px-4 py-2 fw-medium"
+        (click)="goToHome()">
+        <i class="bi bi-house-door"></i>
+        <span>{{ authStore.isTenant() ? 'Return to Leases' : 'Return to Dashboard' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

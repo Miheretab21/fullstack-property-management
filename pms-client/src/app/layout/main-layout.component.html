@@ -1,0 +1,16 @@
+<div class="d-flex min-vh-100 bg-light">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content Area -->
+  <div class="flex-grow-1 d-flex flex-column min-vh-100 overflow-hidden">
+    <app-navbar></app-navbar>
+
+    <main class="flex-grow-1 p-3 p-md-4 overflow-auto">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <!-- Global Toast Container -->
+  <app-toast-container></app-toast-container>
+</div>
