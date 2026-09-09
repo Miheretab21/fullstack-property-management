@@ -122,6 +122,10 @@ propert-mgt/
 ![Financial Dashboard](./screenshots/financial.png)
 *Financial tracking and revenue analysis*
 
+### Tenant Financial Ledger and Chapa Checkout
+![Tenant Financial Ledger](./screenshots/tenant-financial-ledger.png)
+*Tenant view of the financial ledger, including a pending rent payment and the Pay with Chapa action.*
+
 ### Maintenance Requests
 ![Maintenance System](./screenshots/maintenance.png)
 *Maintenance request submission and tracking*
