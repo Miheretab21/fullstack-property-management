@@ -19,6 +19,12 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(t => t.ChapaTransactionReference)
+            .HasMaxLength(100);
+
+        builder.Property(t => t.ChapaPaymentReference)
+            .HasMaxLength(100);
+
         builder.Property(t => t.Status)
             .HasConversion<string>()
             .HasMaxLength(50);

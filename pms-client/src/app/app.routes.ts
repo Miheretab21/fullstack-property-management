@@ -17,6 +17,11 @@ export const routes: Routes = [
     path: 'unauthorized',
     loadComponent: () => import('./features/unauthorized/unauthorized.component').then(m => m.UnauthorizedComponent)
   },
+  {
+    path: 'payment-result',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/payments/payment-result.component').then(m => m.PaymentResultComponent)
+  },
 
   // Authenticated App Shell Routes
   {

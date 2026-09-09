@@ -31,7 +31,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
         notificationService.error(errorMessage, 'Request Failed');
       } else if (error.status >= 500) {
-        notificationService.error('An unexpected server error occurred. Please try again later.');
+        const errorMessage = typeof error.error === 'string'
+          ? error.error
+          : error.error?.detail || error.error?.message || 'An unexpected server error occurred. Please try again later.';
+        notificationService.error(errorMessage);
       }
 
       return throwError(() => error);

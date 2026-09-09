@@ -100,6 +100,12 @@ public static class DependencyInjection
         services.AddScoped<IMaintenanceService, MaintenanceService>();
         services.AddScoped<IDashboardService, DashboardService>();
 
+        services.Configure<ChapaSettings>(configuration.GetSection(ChapaSettings.SectionName));
+        services.AddHttpClient("Chapa", client =>
+        {
+            client.BaseAddress = new Uri("https://api.chapa.co/");
+        });
+
         return services;
     }
 }

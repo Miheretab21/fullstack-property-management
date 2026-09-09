@@ -10,6 +10,8 @@ public class Transaction : BaseEntity
     public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
     public string PaymentMethod { get; set; } = "Bank Transfer";
     public TransactionStatus Status { get; set; } = TransactionStatus.Pending;
+    public string? ChapaTransactionReference { get; set; }
+    public string? ChapaPaymentReference { get; set; }
 
     // Navigation property
     public Lease? Lease { get; set; }

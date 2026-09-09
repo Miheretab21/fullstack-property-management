@@ -117,6 +117,35 @@ export class FinancialComponent implements OnInit {
     }
   }
 
+  payWithChapa(tx: Transaction) {
+    this.isSubmitting.set(true);
+    this.financialService.initializeChapaPayment(tx.id).subscribe({
+      next: (response) => {
+        // A full-page redirect is required for Chapa's hosted checkout.
+        window.location.assign(response.checkoutUrl);
+      },
+      error: () => {
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+
+  verifyChapaPayment(tx: Transaction) {
+    this.isSubmitting.set(true);
+    this.financialService.verifyChapaPayment(tx.id).subscribe({
+      next: (response) => {
+        this.isSubmitting.set(false);
+        if (response.succeeded) {
+          this.notificationService.success('Your Chapa payment has been verified.');
+          this.loadTransactions();
+        } else {
+          this.notificationService.info(response.message || 'Chapa is still processing this payment. Please try again shortly.');
+        }
+      },
+      error: () => this.isSubmitting.set(false)
+    });
+  }
+
   openDirectPaymentModal() {
     this.directPaymentForm.reset({
       leaseId: '',

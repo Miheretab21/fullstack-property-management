@@ -49,3 +49,14 @@ export interface CreateDirectPaymentRequest {
   isCleared?: boolean;
   paymentDate?: string;
 }
+
+export interface ChapaCheckoutResponse {
+  checkoutUrl: string;
+  transactionId: string;
+}
+
+export interface ChapaVerificationResponse {
+  succeeded: boolean;
+  status: string;
+  message: string;
+}

@@ -83,6 +83,25 @@
               <button 
                 *ngIf="tx.status === 'Pending'"
                 type="button" 
+                class="btn btn-sm btn-success d-flex align-items-center gap-1 ms-auto mb-1" 
+                [disabled]="isSubmitting()"
+                (click)="payWithChapa(tx)">
+                <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm"></span>
+                <i *ngIf="!isSubmitting()" class="bi bi-credit-card"></i>
+                Pay with Chapa
+              </button>
+              <button 
+                *ngIf="tx.status === 'Pending'"
+                type="button" 
+                class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 ms-auto mb-1" 
+                [disabled]="isSubmitting()"
+                (click)="verifyChapaPayment(tx)">
+                <i class="bi bi-shield-check"></i>
+                Verify Chapa Payment
+              </button>
+              <button 
+                *ngIf="tx.status === 'Pending'"
+                type="button" 
                 class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 ms-auto" 
                 (click)="openPaymentModal(tx)">
                 <i class="bi bi-check2-circle"></i>

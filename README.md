@@ -255,7 +255,6 @@ For testing purposes, the system includes default seeded users:
   - Email: `tenant@propertymgt.com`
   - Password: `Tenant@123456`
 
-> ⚠️ **Important**: Change these credentials in production and never commit real credentials to the repository.
 
 ## User Roles
 
@@ -348,11 +347,50 @@ Edit `src/PropertyManagement.API/appsettings.json` for backend settings:
 }
 ```
 
+### Chapa payments
+
+The system supports Chapa hosted checkout for tenant rent payments. The Chapa secret key remains on the ASP.NET Core server; it is never sent to the Angular client.
+
+#### How it works
+
+1. `POST /api/payments/chapa/initialize` creates a unique reference for a pending rent transaction and returns Chapa's hosted checkout URL.
+2. The Angular financial ledger redirects the tenant to that URL.
+3. After Chapa redirects back to `/payment-result`, the client calls `POST /api/payments/chapa/verify`.
+4. The API only marks the rent as paid when Chapa verifies a successful payment with the expected transaction reference, ETB currency, and amount.
+
+#### Test-mode setup and demo
+
+1. Create or sign in to a Chapa account and copy a **Test Secret Key** beginning with `CHASECK_TEST-`.
+2. Open PowerShell in the project folder and set the test configuration. Replace the placeholder with your own key; never commit or share it.
+
+```powershell
+cd "C:\Users\<your-user>\Desktop\propert mgt"
+$env:Chapa__SecretKey = "CHASECK_TEST-your-test-secret-key"
+$env:Chapa__ReturnUrl = "http://localhost:4300/payment-result"
+dotnet run --project src\PropertyManagement.API
+```
+
+3. In a second PowerShell window, start the Angular app:
+
+```powershell
+cd "C:\Users\<your-user>\Desktop\propert mgt\pms-client"
+npm start
+```
+
+4. In the browser, create a pending charge (an Admin or Property Manager can record a payment with **Money Came In** unchecked), then sign in as the tenant.
+5. From **Financial Ledger**, select **Pay with Chapa** for the pending charge and complete the test checkout using Chapa's test details.
+6. On return, the app verifies the payment. If required, select **Verify Chapa Payment**; this only checks the existing payment and does not start a new charge.
+7. Confirm the transaction changes from **Pending Clearance** to **Money Received (Paid)**. The successful test transaction will also appear in the Chapa dashboard.
+
+`localhost` means the app is running only on your own computer, which is appropriate for a classroom test demonstration. Test mode uses no real money.
+
+For production, use a live Chapa secret key and configure `Chapa__ReturnUrl` with the public Angular payment-result URL and `Chapa__CallbackUrl` with the public `GET /api/payments/chapa/callback` URL. Both URLs must be publicly accessible over HTTPS. Apply the included `AddChapaPaymentReferences` migration before taking payments.
+
 
 
 ## Known Issues
 
-- no payment integration yet, the leases are created by the admin/property manager assuming the tenant payed in person
+- Chapa checkout requires a valid Chapa test or live account and API key; it cannot be completed without them.
 
 ## Future Enhancements
 
@@ -361,7 +399,7 @@ Edit `src/PropertyManagement.API/appsettings.json` for backend settings:
 - [ ] SMS/Email notifications
 - [ ] Advanced reporting and analytics
 - [ ] Mobile application
-- [ ] Payment gateway integration
+- [x] Chapa hosted checkout and server-side payment verification
 - [ ] Document management system
 - [ ] Automated recurring transactions
 

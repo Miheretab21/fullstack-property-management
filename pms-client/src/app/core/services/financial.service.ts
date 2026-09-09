@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ServiceResult } from '../models/auth.models';
-import { CreateDirectPaymentRequest, CreateRentChargeRequest, RecordPaymentRequest, TenantLedgerSummary, Transaction, TransactionStatus } from '../models/financial.models';
+import { ChapaCheckoutResponse, ChapaVerificationResponse, CreateDirectPaymentRequest, CreateRentChargeRequest, RecordPaymentRequest, TenantLedgerSummary, Transaction, TransactionStatus } from '../models/financial.models';
 
 @Injectable({
   providedIn: 'root'
@@ -39,5 +39,13 @@ export class FinancialService {
 
   createDirectPayment(request: CreateDirectPaymentRequest): Observable<ServiceResult<Transaction>> {
     return this.http.post<ServiceResult<Transaction>>(`${this.baseUrl}/direct-payments`, request);
+  }
+
+  initializeChapaPayment(transactionId: string): Observable<ChapaCheckoutResponse> {
+    return this.http.post<ChapaCheckoutResponse>(`${environment.apiUrl}/payments/chapa/initialize`, { transactionId });
+  }
+
+  verifyChapaPayment(transactionId: string): Observable<ChapaVerificationResponse> {
+    return this.http.post<ChapaVerificationResponse>(`${environment.apiUrl}/payments/chapa/verify`, { transactionId });
   }
 }
